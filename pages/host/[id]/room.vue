@@ -332,21 +332,40 @@ const startRecording = async () => {
             return
         }
 
-        // Get MediaStreamTrack dari Agora
         const videoMediaStreamTrack = localVideoTrack.value.getMediaStreamTrack()
         const audioMediaStreamTrack = localAudioTrack.value.getMediaStreamTrack()
 
-        // Buat MediaStream
         const stream = new MediaStream([videoMediaStreamTrack, audioMediaStreamTrack])
 
-        // Setup MediaRecorder
-        const options = { mimeType: 'video/webm;codecs=vp8,opus' }
+        // Cek codec support dengan priority order
+        let options: MediaRecorderOptions
+        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+            options = { 
+                mimeType: 'video/webm;codecs=vp9,opus',
+                videoBitsPerSecond: 2500000 // 2.5 Mbps
+            }
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+            options = { 
+                mimeType: 'video/webm;codecs=vp8,opus',
+                videoBitsPerSecond: 2500000
+            }
+        } else if (MediaRecorder.isTypeSupported('video/webm')) {
+            options = { 
+                mimeType: 'video/webm',
+                videoBitsPerSecond: 2500000
+            }
+        } else {
+            alert('WebM recording not supported in this browser')
+            return
+        }
+
+        console.log('Recording with:', options.mimeType)
         mediaRecorder.value = new MediaRecorder(stream, options)
 
         recordedChunks.value = []
 
         mediaRecorder.value.ondataavailable = (event) => {
-            if (event.data.size > 0) {
+            if (event.data && event.data.size > 0) {
                 recordedChunks.value.push(event.data)
             }
         }
@@ -355,17 +374,24 @@ const startRecording = async () => {
             saveRecording()
         }
 
-        mediaRecorder.value.start(1000) // Record in 1s chunks
+        mediaRecorder.value.onerror = (event: any) => {
+            console.error('MediaRecorder error:', event)
+            alert('Recording error occurred')
+            isRecording.value = false
+            stopRecordingTimer()
+        }
+
+        // Start dengan timeslice lebih kecil untuk smooth recording
+        mediaRecorder.value.start(100) // 100ms chunks
         isRecording.value = true
         recordingStartTime.value = Date.now()
         
-        // Start recording timer
         startRecordingTimer()
 
         console.log('Recording started')
     } catch (error) {
         console.error('Error starting recording:', error)
-        alert('Failed to start recording')
+        alert('Failed to start recording: ' + error)
     }
 }
 

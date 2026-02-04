@@ -11,13 +11,58 @@
                 <p class="font-bold text-xl">{{ roomID }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <button v-if="showEraserLine" class="h-[25px] flex items-center justify-center class text-sm bg-orange-400 text-white rounded-lg px-2 py-1 hover:bg-orange-500 focus:outline-none" @click="clearAnnotation(false)">
+                <button v-if="!totalDurationTime && !isRecording && hasRemoteVideo" class="h-[25px] flex items-center justify-center class text-xs md:text-sm bg-red-500 text-white rounded-lg px-2 py-1 hover:bg-red-600 focus:outline-none" @click="startRecording">
+                    ⏺ Start Recording
+                </button>
+                <button v-if="!totalDurationTime && isRecording" class="h-[25px] flex items-center justify-center class text-xs md:text-sm bg-gray-500 text-white rounded-lg px-2 py-1 hover:bg-gray-600 focus:outline-none" @click="stopRecording">
+                    ⏹ Stop Recording
+                </button>
+                <button v-if="!totalDurationTime" class="h-[25px] flex items-center justify-center class text-xs md:text-sm bg-green-400 text-white rounded-lg px-2 py-1 hover:bg-green-500 focus:outline-none" @click="toggleStatsModal">
+                    {{ showStats ? 'Hide Stats' : 'Show Stats' }}
+                </button>
+                <button v-if="!totalDurationTime && statsHistory.length > 0" class="h-[25px] flex items-center justify-center class text-xs md:text-sm bg-purple-400 text-white rounded-lg px-2 py-1 hover:bg-purple-500 focus:outline-none" @click="exportStatsToCSV">
+                    Export Stats
+                </button>
+                <button v-if="showEraserLine" class="h-[25px] flex items-center justify-center class text-xs md:text-sm bg-orange-400 text-white rounded-lg px-2 py-1 hover:bg-orange-500 focus:outline-none" @click="clearAnnotation(false)">
                     Clear Annotation
                 </button>
-                <button v-if="onCall" class="h-[25px] flex items-center justify-center class text-sm bg-red-400 text-white rounded-lg px-2 py-1 hover:bg-red-500 focus:outline-none" @click="endCall">
+                <button v-if="onCall" class="h-[25px] flex items-center justify-center class text-xs md:text-sm bg-red-400 text-white rounded-lg px-2 py-1 hover:bg-red-500 focus:outline-none" @click="endCall">
                     End call
                 </button>
             </div>
+        </div>
+
+        <!-- Stats Modal -->
+        <div v-if="showStats" class="absolute top-20 right-4 bg-white shadow-lg rounded-lg p-4 w-80 z-50 border border-gray-200">
+            <h3 class="text-lg font-bold mb-3 text-gray-800">Quality Stats</h3>
+            
+            <div class="mb-4">
+                <h4 class="font-semibold text-sm text-blue-600 mb-2">📹 Local Video</h4>
+                <div class="space-y-1 text-xs">
+                    <p><span class="font-medium">Resolusi:</span> {{ localStats.resolution }}</p>
+                    <p><span class="font-medium">FPS:</span> {{ localStats.fps }}</p>
+                    <p><span class="font-medium">Send Audio Bitrate:</span> {{ localStats.sendAudioBitrate }} kbps</p>
+                    <p><span class="font-medium">Send Video Bitrate:</span> {{ localStats.sendVideoBitrate }} kbps</p>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="font-semibold text-sm text-green-600 mb-2">📡 Remote Video</h4>
+                <div v-if="remoteStats.uid" class="space-y-1 text-xs">
+                    <p><span class="font-medium">Delay:</span> {{ remoteStats.delay }} ms</p>
+                    <p><span class="font-medium">Resolusi:</span> {{ remoteStats.resolution }}</p>
+                    <p><span class="font-medium">FPS:</span> {{ remoteStats.fps }}</p>
+                    <p><span class="font-medium">Received Audio Bitrate:</span> {{ remoteStats.recvAudioBitrate }} kbps</p>
+                    <p><span class="font-medium">Received Video Bitrate:</span> {{ remoteStats.recvVideoBitrate }} kbps</p>
+                </div>
+                <p v-else class="text-xs text-gray-500">No remote user connected</p>
+            </div>
+        </div>
+
+        <!-- Recording Indicator -->
+        <div v-if="isRecording" class="absolute top-24 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 z-50 animate-pulse">
+            <span class="w-2 h-2 bg-white rounded-full"></span>
+            Recording {{ recordingDuration }}
         </div>
 
         <div v-if="totalDurationTime" class="flex p-4 bg-gray-100 w-screen justify-center">
@@ -58,7 +103,6 @@ const config = useRuntimeConfig()
 const appID = ref(config.public.APP_ID)
 const roomID = ref(route.params.id as string ?? '')
 const remoteStream = ref<HTMLVideoElement | null>(null)
-// TODO: still hardcoded, need to be get from the user data once we have backend to maintain user.
 const userUUID = ref('proctor')
 const canvas = ref<HTMLCanvasElement | null>(null)
 const ctxCanvas = ref<CanvasRenderingContext2D | null>(null)
@@ -71,6 +115,50 @@ const lastX = ref<number | null>(null)
 const lastY = ref<number | null>(null)
 const lines: Ref<LineData[]> = ref([])
 const roomDoesntExist = ref(false)
+
+// Stats monitoring
+const showStats = ref(false)
+const statsInterval = ref<NodeJS.Timeout | null>(null)
+const localStats = ref({
+    resolution: '-',
+    fps: 0,
+    sendAudioBitrate: 0,
+    sendVideoBitrate: 0
+})
+const remoteStats = ref({
+    uid: null as string | null,
+    delay: 0,
+    resolution: '-',
+    fps: 0,
+    recvAudioBitrate: 0,
+    recvVideoBitrate: 0
+})
+
+// Recording
+const mediaRecorder = ref<MediaRecorder | null>(null)
+const recordedChunks = ref<Blob[]>([])
+const isRecording = ref(false)
+const recordingDuration = ref('00:00')
+const recordingTimer = ref<NodeJS.Timeout | null>(null)
+const recordingStartTime = ref(0)
+const remoteVideoTrack = ref<any>(null)
+const remoteAudioTrack = ref<any>(null)
+const hasRemoteVideo = ref(false)
+
+interface StatsHistoryItem {
+    timestamp: string
+    localResolution: string
+    localFps: number
+    localSendAudioBitrate: number
+    localSendVideoBitrate: number
+    remoteDelay: number
+    remoteResolution: string
+    remoteFps: number
+    remoteRecvAudioBitrate: number
+    remoteRecvVideoBitrate: number
+}
+
+const statsHistory = ref<StatsHistoryItem[]>([])
 
 const { $firestore } = useNuxtApp()
 const { client, joinChannel, localVideoTrack, localAudioTrack, leaveChannel} = useAgora(appID.value, roomID.value, userUUID.value)
@@ -107,15 +195,25 @@ const formatTime = (totalSeconds: number) => {
 
 onBeforeUnmount(() => {
     clearSession()
+    stopStatsMonitoring()
+    if (isRecording.value) {
+        stopRecording()
+    }
 })
 
 const endCall = () => {
+    // Stop recording jika masih aktif
+    if (isRecording.value) {
+        stopRecording()
+    }
+    
     clearSession()
 
     const endTime = Date.now()
     const durationInSeconds = Math.floor((endTime - startTime.value) / 1000)
     totalDurationTime.value = formatTime(durationInSeconds)
     onCall.value = false
+    stopStatsMonitoring()
 }
 
 const clearSession = () => {
@@ -133,8 +231,6 @@ const clearSession = () => {
     leaveChannel()
 }
 
-// check if the room exists. if not, set roomDoesntExist to true
-// to prevent the participant joining unavailable room.
 const checkRoom = async() => {
     try {
         const roomDoc = collection(firestore.value, roomID.value)
@@ -145,7 +241,6 @@ const checkRoom = async() => {
     }
 }
 
-// will end the call when the room is deleted or ended by host.
 const monitorRoom = () => {
     try {
         const roomDoc = collection(firestore.value, roomID.value)
@@ -161,7 +256,6 @@ const monitorRoom = () => {
     }
 }
 
-// clear all the lines in the canvas and delete all the lines in Firestore.
 const clearAnnotation = async (endCall: boolean) => {
     try {
         const linesCollection = collection(firestore.value, roomID.value)
@@ -181,7 +275,6 @@ const clearAnnotation = async (endCall: boolean) => {
             })
         }
         
-        // clear canvas locally once successfully cleared in Firestore
         if (ctxCanvas.value && canvas.value) {
             ctxCanvas.value.clearRect(0, 0, canvas.value.width, canvas.value.height)
         }
@@ -203,6 +296,8 @@ const join = async () => {
     if (localElement) {
         res?.localVideoTrack.value?.play(localElement)
     }
+    
+    startStatsMonitoring()
 }
 
 const listenToDrawingUpdates = async () => {
@@ -239,7 +334,6 @@ const drawLineOnCanvas = () => {
         if (ctxCanvas.value) {
             const width = canvas.value?.width ?? 1
             const height = canvas.value?.height ?? 1
-            // set the color based on the role. role 1 is for the host and role 2 is for the participant.
             ctxCanvas.value.strokeStyle = lineData.role === 1 ? 'blue' : 'red'
             ctxCanvas.value.beginPath()
             ctxCanvas.value.moveTo(lineData.startX * width, lineData.startY * height)
@@ -255,18 +349,269 @@ const listenUserPublish = async () => {
 
         if (mediaType === 'video') {
             await client.value.subscribe(user, 'video')
-            const remoteStream = user.videoTrack
+            const remoteStreamTrack = user.videoTrack
             const remoteElement = document.getElementById('remote-stream')
             if (remoteElement) {
-                remoteStream.play(remoteElement)
+                remoteStreamTrack.play(remoteElement)
             }
+            
+            // Simpan reference untuk recording
+            remoteVideoTrack.value = user.videoTrack
+            hasRemoteVideo.value = true
         } else if (mediaType === 'audio') {
             await client.value.subscribe(user, 'audio')
             user.audioTrack.play()
+            
+            // Simpan reference untuk recording
+            remoteAudioTrack.value = user.audioTrack
+        }
+    })
+    
+    // Handle user unpublished
+    client.value.on('user-unpublished', (user: any, mediaType: string) => {
+        if (mediaType === 'video') {
+            remoteVideoTrack.value = null
+            hasRemoteVideo.value = false
+            
+            // Stop recording jika remote video hilang
+            if (isRecording.value) {
+                stopRecording()
+                alert('Recording stopped: Host disconnected')
+            }
+        } else if (mediaType === 'audio') {
+            remoteAudioTrack.value = null
         }
     })
 }
 
+// Recording functions
+const startRecording = async () => {
+    try {
+        if (!remoteVideoTrack.value) {
+            alert('Host video not available')
+            return
+        }
+
+        // Get MediaStreamTrack dari remote user (host)
+        const videoMediaStreamTrack = remoteVideoTrack.value.getMediaStreamTrack()
+        
+        // Buat MediaStream - video saja atau video + audio
+        let stream: MediaStream
+        if (remoteAudioTrack.value) {
+            const audioMediaStreamTrack = remoteAudioTrack.value.getMediaStreamTrack()
+            stream = new MediaStream([videoMediaStreamTrack, audioMediaStreamTrack])
+        } else {
+            stream = new MediaStream([videoMediaStreamTrack])
+        }
+
+        // Setup MediaRecorder
+        const options = { mimeType: 'video/webm;codecs=vp8,opus' }
+        mediaRecorder.value = new MediaRecorder(stream, options)
+
+        recordedChunks.value = []
+
+        mediaRecorder.value.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.value.push(event.data)
+            }
+        }
+
+        mediaRecorder.value.onstop = () => {
+            saveRecording()
+        }
+
+        mediaRecorder.value.start(1000) // Record in 1s chunks
+        isRecording.value = true
+        recordingStartTime.value = Date.now()
+        
+        // Start recording timer
+        startRecordingTimer()
+
+        console.log('Recording started (Host video)')
+    } catch (error) {
+        console.error('Error starting recording:', error)
+        alert('Failed to start recording')
+    }
+}
+
+const stopRecording = () => {
+    if (mediaRecorder.value && isRecording.value) {
+        mediaRecorder.value.stop()
+        isRecording.value = false
+        stopRecordingTimer()
+        console.log('Recording stopped')
+    }
+}
+
+const startRecordingTimer = () => {
+    recordingTimer.value = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - recordingStartTime.value) / 1000)
+        const minutes = Math.floor(elapsed / 60)
+        const seconds = elapsed % 60
+        recordingDuration.value = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    }, 1000)
+}
+
+const stopRecordingTimer = () => {
+    if (recordingTimer.value) {
+        clearInterval(recordingTimer.value)
+        recordingTimer.value = null
+        recordingDuration.value = '00:00'
+    }
+}
+
+const saveRecording = () => {
+    if (recordedChunks.value.length === 0) {
+        alert('No recording data to save')
+        return
+    }
+
+    const blob = new Blob(recordedChunks.value, { type: 'video/webm' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    link.href = url
+    link.download = `host_video_recording_${roomID.value}_${timestamp}.webm`
+    link.style.display = 'none'
+    
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    URL.revokeObjectURL(url)
+    recordedChunks.value = []
+    
+    alert('Host video recording saved successfully!')
+}
+
+// Stats monitoring functions
+const toggleStatsModal = () => {
+    showStats.value = !showStats.value
+}
+
+const startStatsMonitoring = () => {
+    if (statsInterval.value) return
+    
+    statsInterval.value = setInterval(() => {
+        updateLocalStats()
+        updateRemoteStats()
+        saveStatsToHistory()
+    }, 1000)
+}
+
+const stopStatsMonitoring = () => {
+    if (statsInterval.value) {
+        clearInterval(statsInterval.value)
+        statsInterval.value = null
+    }
+}
+
+const updateLocalStats = () => {
+    if (!localVideoTrack.value || !localAudioTrack.value) return
+    
+    const videoStats = localVideoTrack.value.getStats()
+    localStats.value.resolution = `${videoStats.sendResolutionWidth}x${videoStats.sendResolutionHeight}`
+    localStats.value.fps = videoStats.sendFrameRate || 0
+    localStats.value.sendVideoBitrate = Math.round(videoStats.sendBitrate || 0)
+    
+    const audioStats = localAudioTrack.value.getStats()
+    localStats.value.sendAudioBitrate = Math.round(audioStats.sendBitrate || 0)
+}
+
+const updateRemoteStats = () => {
+    const remoteUsers = client.value.remoteUsers
+    if (remoteUsers.length === 0) {
+        remoteStats.value.uid = null
+        return
+    }
+    
+    const remoteUser = remoteUsers[0]
+    remoteStats.value.uid = remoteUser.uid
+    
+    if (remoteUser.videoTrack) {
+        const videoStats = remoteUser.videoTrack.getStats()
+        remoteStats.value.resolution = `${videoStats.receiveResolutionWidth}x${videoStats.receiveResolutionHeight}`
+        remoteStats.value.fps = videoStats.receiveFrameRate || 0
+        remoteStats.value.recvVideoBitrate = Math.round(videoStats.receiveBitrate || 0)
+        remoteStats.value.delay = videoStats.receiveDelay || 0
+    }
+    
+    if (remoteUser.audioTrack) {
+        const audioStats = remoteUser.audioTrack.getStats()
+        remoteStats.value.recvAudioBitrate = Math.round(audioStats.receiveBitrate || 0)
+    }
+}
+
+const saveStatsToHistory = () => {
+    const now = new Date()
+    const timestamp = now.toLocaleString('id-ID')
+    
+    statsHistory.value.push({
+        timestamp,
+        localResolution: localStats.value.resolution,
+        localFps: localStats.value.fps,
+        localSendAudioBitrate: localStats.value.sendAudioBitrate,
+        localSendVideoBitrate: localStats.value.sendVideoBitrate,
+        remoteDelay: remoteStats.value.delay,
+        remoteResolution: remoteStats.value.resolution,
+        remoteFps: remoteStats.value.fps,
+        remoteRecvAudioBitrate: remoteStats.value.recvAudioBitrate,
+        remoteRecvVideoBitrate: remoteStats.value.recvVideoBitrate
+    })
+}
+
+const exportStatsToCSV = () => {
+    if (statsHistory.value.length === 0) {
+        alert('No stats data to export')
+        return
+    }
+    
+    const headers = [
+        'Timestamp',
+        'Local Resolution',
+        'Local FPS',
+        'Local Send Audio Bitrate (kbps)',
+        'Local Send Video Bitrate (kbps)',
+        'Remote Delay (ms)',
+        'Remote Resolution',
+        'Remote FPS',
+        'Remote Recv Audio Bitrate (kbps)',
+        'Remote Recv Video Bitrate (kbps)'
+    ]
+    
+    const rows = statsHistory.value.map(stat => [
+        stat.timestamp,
+        stat.localResolution,
+        stat.localFps,
+        stat.localSendAudioBitrate,
+        stat.localSendVideoBitrate,
+        stat.remoteDelay,
+        stat.remoteResolution,
+        stat.remoteFps,
+        stat.remoteRecvAudioBitrate,
+        stat.remoteRecvVideoBitrate
+    ])
+    
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    
+    link.setAttribute('href', url)
+    link.setAttribute('download', `stats_participant_${roomID.value}_${Date.now()}.csv`)
+    link.style.visibility = 'hidden'
+    
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+}
+
+// Drawing functions
 const startDraw = (event: MouseEvent) => {
     isDrawing.value = true
     const { x, y } = getCoordinates(event, canvas.value)

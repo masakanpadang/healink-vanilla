@@ -22,7 +22,7 @@ export function useAgora(appId: string, channel: string, uid: string) {
         agora.value.createMicrophoneAudioTrack(),
         agora.value.createCameraVideoTrack({
           cameraId: cameraId,
-          encoderConfig: '1080p_2'
+          encoderConfig: '720p_2'
         }),
       ])
 
@@ -50,7 +50,8 @@ export function useAgora(appId: string, channel: string, uid: string) {
       await client.value.unpublish([localVideoTrack.value])
 
       const videoTrack = await agora.value.createCameraVideoTrack({
-        cameraId: cameraId
+        cameraId: cameraId,
+        encoderConfig: '720p_2'
       })
 
       localVideoTrack.value = videoTrack

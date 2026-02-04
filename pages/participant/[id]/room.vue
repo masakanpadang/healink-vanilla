@@ -59,7 +59,7 @@ const appID = ref(config.public.APP_ID)
 const roomID = ref(route.params.id as string ?? '')
 const remoteStream = ref<HTMLVideoElement | null>(null)
 // TODO: still hardcoded, need to be get from the user data once we have backend to maintain user.
-const userUUID = ref('e1c4fbd9e3f1459aab16e5f1ffaf5111')
+const userUUID = ref('proctor')
 const canvas = ref<HTMLCanvasElement | null>(null)
 const ctxCanvas = ref<CanvasRenderingContext2D | null>(null)
 const startTime = ref()

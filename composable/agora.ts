@@ -21,7 +21,8 @@ export function useAgora(appId: string, channel: string, uid: string) {
       const [audioTrack, videoTrack] = await Promise.all([
         agora.value.createMicrophoneAudioTrack(),
         agora.value.createCameraVideoTrack({
-          cameraId: cameraId
+          cameraId: cameraId,
+          encoderConfig: '1080p_2'
         }),
       ])
 

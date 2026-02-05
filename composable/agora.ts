@@ -15,14 +15,14 @@ export function useAgora(appId: string, channel: string, uid: string) {
   
   const joinChannel = async (cameraId?: string) => {
     try {
-      client.value = markRaw(agora.value.createClient({ mode: 'rtc', codec: 'vp9' }))
+      client.value = markRaw(agora.value.createClient({ mode: 'rtc', codec: 'vp8' }))
       const user = await client.value.join(appId, channel, null, uid)
 
       const [audioTrack, videoTrack] = await Promise.all([
         agora.value.createMicrophoneAudioTrack(),
         agora.value.createCameraVideoTrack({
           cameraId: cameraId,
-          encoderConfig: '1080p_2'
+          encoderConfig: '720p_2'
         }),
       ])
 
@@ -51,7 +51,7 @@ export function useAgora(appId: string, channel: string, uid: string) {
 
       const videoTrack = await agora.value.createCameraVideoTrack({
         cameraId: cameraId,
-        encoderConfig: '1080p_2'
+        encoderConfig: '720p_2'
       })
 
       localVideoTrack.value = videoTrack

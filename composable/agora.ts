@@ -15,7 +15,7 @@ export function useAgora(appId: string, channel: string, uid: string) {
   
   const joinChannel = async (cameraId?: string) => {
     try {
-      client.value = markRaw(agora.value.createClient({ mode: 'rtc', codec: 'vp8' }))
+      client.value = markRaw(agora.value.createClient({ mode: 'rtc', codec: 'vp9' }))
       const user = await client.value.join(appId, channel, null, uid)
 
       const [audioTrack, videoTrack] = await Promise.all([

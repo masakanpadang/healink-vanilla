@@ -32,27 +32,67 @@
         </div>
 
         <!-- Stats Modal -->
-        <div v-if="showStats" class="absolute top-20 right-4 bg-white shadow-lg rounded-lg p-4 w-80 z-50 border border-gray-200">
+        <div v-if="showStats" class="absolute top-20 right-4 bg-white shadow-lg rounded-lg p-4 w-96 z-50 border border-gray-200 max-h-[80vh] overflow-y-auto">
             <h3 class="text-lg font-bold mb-3 text-gray-800">Quality Stats</h3>
             
+            <!-- Client Stats -->
             <div class="mb-4">
-                <h4 class="font-semibold text-sm text-blue-600 mb-2">📹 Local Video</h4>
+                <h4 class="font-semibold text-sm text-gray-700 mb-2">🌐 Client Stats</h4>
                 <div class="space-y-1 text-xs">
-                    <p><span class="font-medium">Resolusi:</span> {{ localStats.resolution }}</p>
-                    <p><span class="font-medium">FPS:</span> {{ localStats.fps }}</p>
-                    <p><span class="font-medium">Send Audio Bitrate:</span> {{ localStats.sendAudioBitrate }} kbps</p>
-                    <p><span class="font-medium">Send Video Bitrate:</span> {{ localStats.sendVideoBitrate }} kbps</p>
+                    <p><span class="font-medium">Users in Channel:</span> {{ clientStats.userCount }}</p>
+                    <p><span class="font-medium">Duration:</span> {{ clientStats.duration }} s</p>
+                    <p><span class="font-medium">Send Bitrate:</span> {{ clientStats.sendBitrate }} bps</p>
+                    <p><span class="font-medium">Recv Bitrate:</span> {{ clientStats.recvBitrate }} bps</p>
+                    <p><span class="font-medium">Send Bytes:</span> {{ clientStats.sendBytes }} bytes</p>
+                    <p><span class="font-medium">Recv Bytes:</span> {{ clientStats.recvBytes }} bytes</p>
+                    <p><span class="font-medium">Outgoing Bandwidth:</span> {{ clientStats.outgoingAvailableBandwidth }} kbps</p>
+                    <p><span class="font-medium">RTT:</span> {{ clientStats.rtt }} ms</p>
                 </div>
             </div>
 
+            <!-- Local Stats -->
+            <div class="mb-4">
+                <h4 class="font-semibold text-sm text-blue-600 mb-2">📹 Local Stats</h4>
+                <div class="space-y-1 text-xs">
+                    <p class="font-medium text-blue-500 mt-1">Audio:</p>
+                    <p><span class="font-medium">Send Bitrate:</span> {{ localStats.audioSendBitrate }} bps</p>
+                    <p><span class="font-medium">Send Bytes:</span> {{ localStats.audioSendBytes }} bytes</p>
+                    <p><span class="font-medium">Send Packets:</span> {{ localStats.audioSendPackets }}</p>
+                    <p><span class="font-medium">Packets Lost:</span> {{ localStats.audioSendPacketsLost }}</p>
+                    <p class="font-medium text-blue-500 mt-1">Video:</p>
+                    <p><span class="font-medium">Capture Resolution:</span> {{ localStats.captureResolutionWidth }}x{{ localStats.captureResolutionHeight }}</p>
+                    <p><span class="font-medium">Send Resolution:</span> {{ localStats.sendResolutionWidth }}x{{ localStats.sendResolutionHeight }}</p>
+                    <p><span class="font-medium">Encode Delay:</span> {{ localStats.encodeDelay }} ms</p>
+                    <p><span class="font-medium">Send Bitrate:</span> {{ localStats.videoSendBitrate }} bps</p>
+                    <p><span class="font-medium">Send Bytes:</span> {{ localStats.videoSendBytes }} bytes</p>
+                    <p><span class="font-medium">Send Packets:</span> {{ localStats.videoSendPackets }}</p>
+                    <p><span class="font-medium">Packets Lost:</span> {{ localStats.videoSendPacketsLost }}</p>
+                    <p><span class="font-medium">Duration:</span> {{ localStats.videoDuration }} s</p>
+                    <p><span class="font-medium">Freeze Time:</span> {{ localStats.videoFreezeTime }} s</p>
+                </div>
+            </div>
+
+            <!-- Remote Stats -->
             <div>
-                <h4 class="font-semibold text-sm text-green-600 mb-2">📡 Remote Video</h4>
+                <h4 class="font-semibold text-sm text-green-600 mb-2">📡 Remote Stats</h4>
                 <div v-if="remoteStats.uid" class="space-y-1 text-xs">
-                    <p><span class="font-medium">Delay:</span> {{ remoteStats.delay }} ms</p>
-                    <p><span class="font-medium">Resolusi:</span> {{ remoteStats.resolution }}</p>
-                    <p><span class="font-medium">FPS:</span> {{ remoteStats.fps }}</p>
-                    <p><span class="font-medium">Received Audio Bitrate:</span> {{ remoteStats.recvAudioBitrate }} kbps</p>
-                    <p><span class="font-medium">Received Video Bitrate:</span> {{ remoteStats.recvVideoBitrate }} kbps</p>
+                    <p class="font-medium text-green-500 mt-1">Audio:</p>
+                    <p><span class="font-medium">Receive Delay:</span> {{ remoteStats.audioReceiveDelay }} ms</p>
+                    <p><span class="font-medium">Receive Bytes:</span> {{ remoteStats.audioReceiveBytes }} bytes</p>
+                    <p><span class="font-medium">Receive Packets:</span> {{ remoteStats.audioReceivePackets }}</p>
+                    <p><span class="font-medium">Packets Lost:</span> {{ remoteStats.audioReceivePacketsLost }}</p>
+                    <p><span class="font-medium">Packet Loss Rate:</span> {{ remoteStats.audioPacketLossRate }} %</p>
+                    <p class="font-medium text-green-500 mt-1">Video:</p>
+                    <p><span class="font-medium">Receive Delay:</span> {{ remoteStats.videoReceiveDelay }} ms</p>
+                    <p><span class="font-medium">Receive Resolution:</span> {{ remoteStats.receiveResolutionWidth }}x{{ remoteStats.receiveResolutionHeight }}</p>
+                    <p><span class="font-medium">Receive Bitrate:</span> {{ remoteStats.videoReceiveBitrate }} bps</p>
+                    <p><span class="font-medium">Receive Bytes:</span> {{ remoteStats.videoReceiveBytes }} bytes</p>
+                    <p><span class="font-medium">Receive Packets:</span> {{ remoteStats.videoReceivePackets }}</p>
+                    <p><span class="font-medium">Packets Lost:</span> {{ remoteStats.videoReceivePacketsLost }}</p>
+                    <p><span class="font-medium">Packet Loss Rate:</span> {{ remoteStats.videoPacketLossRate }} %</p>
+                    <p><span class="font-medium">Duration:</span> {{ remoteStats.videoDuration }} s</p>
+                    <p><span class="font-medium">Freeze Time:</span> {{ remoteStats.videoFreezeTime }} s</p>
+                    <p><span class="font-medium">Freeze Rate:</span> {{ remoteStats.videoFreezeRate }} %</p>
                 </div>
                 <p v-else class="text-xs text-gray-500">No remote user connected</p>
             </div>
@@ -118,19 +158,57 @@ const lines: Ref<LineData[]> = ref([])
 // Stats monitoring
 const showStats = ref(false)
 const statsInterval = ref<NodeJS.Timeout | null>(null)
-const localStats = ref({
-    resolution: '-',
-    fps: 0,
-    sendAudioBitrate: 0,
-    sendVideoBitrate: 0
+
+// Client-level stats (from client.getRTCStats())
+const clientStats = ref({
+    userCount: 0,
+    duration: 0,
+    sendBitrate: 0,
+    recvBitrate: 0,
+    sendBytes: 0,
+    recvBytes: 0,
+    outgoingAvailableBandwidth: '0.000',
+    rtt: 0
 })
+
+// Local stats (from client.getLocalVideoStats() & client.getLocalAudioStats())
+const localStats = ref({
+    audioSendBitrate: 0,
+    audioSendBytes: 0,
+    audioSendPackets: 0,
+    audioSendPacketsLost: 0,
+    captureResolutionHeight: 0,
+    captureResolutionWidth: 0,
+    sendResolutionHeight: 0,
+    sendResolutionWidth: 0,
+    encodeDelay: '0.00',
+    videoSendBitrate: 0,
+    videoSendBytes: 0,
+    videoSendPackets: 0,
+    videoSendPacketsLost: 0,
+    videoDuration: 0,
+    videoFreezeTime: 0
+})
+
+// Remote stats (from client.getRemoteVideoStats() & client.getRemoteAudioStats())
 const remoteStats = ref({
     uid: null as string | null,
-    delay: 0,
-    resolution: '-',
-    fps: 0,
-    recvAudioBitrate: 0,
-    recvVideoBitrate: 0
+    audioReceiveDelay: '0.00',
+    videoReceiveDelay: '0.00',
+    audioReceiveBytes: 0,
+    audioReceivePackets: 0,
+    audioReceivePacketsLost: 0,
+    audioPacketLossRate: '0.000',
+    receiveResolutionHeight: 0,
+    receiveResolutionWidth: 0,
+    videoReceiveBitrate: 0,
+    videoReceiveBytes: 0,
+    videoReceivePackets: 0,
+    videoReceivePacketsLost: 0,
+    videoPacketLossRate: '0.000',
+    videoDuration: 0,
+    videoFreezeTime: 0,
+    videoFreezeRate: '0.000'
 })
 
 // Recording
@@ -143,15 +221,50 @@ const recordingStartTime = ref(0)
 
 interface StatsHistoryItem {
     timestamp: string
-    localResolution: string
-    localFps: number
-    localSendAudioBitrate: number
-    localSendVideoBitrate: number
-    remoteDelay: number
-    remoteResolution: string
-    remoteFps: number
-    remoteRecvAudioBitrate: number
-    remoteRecvVideoBitrate: number
+    // Client stats
+    userCount: number
+    duration: number
+    sendBitrate: number
+    recvBitrate: number
+    sendBytes: number
+    recvBytes: number
+    outgoingAvailableBandwidth: string
+    rtt: number
+    // Local audio stats
+    audioSendBitrate: number
+    audioSendBytes: number
+    audioSendPackets: number
+    audioSendPacketsLost: number
+    // Local video stats
+    captureResolutionHeight: number
+    captureResolutionWidth: number
+    sendResolutionHeight: number
+    sendResolutionWidth: number
+    encodeDelay: string
+    videoSendBitrate: number
+    videoSendBytes: number
+    videoSendPackets: number
+    videoSendPacketsLost: number
+    videoDuration: number
+    videoFreezeTime: number
+    // Remote audio stats
+    audioReceiveDelay: string
+    audioReceiveBytes: number
+    audioReceivePackets: number
+    audioReceivePacketsLost: number
+    audioPacketLossRate: string
+    // Remote video stats
+    videoReceiveDelay: string
+    receiveResolutionHeight: number
+    receiveResolutionWidth: number
+    videoReceiveBitrate: number
+    videoReceiveBytes: number
+    videoReceivePackets: number
+    videoReceivePacketsLost: number
+    videoPacketLossRate: string
+    remoteVideoDuration: number
+    remoteVideoFreezeTime: number
+    videoFreezeRate: string
 }
 
 const statsHistory = ref<StatsHistoryItem[]>([])
@@ -218,7 +331,6 @@ const switchCameraInternal = async () => {
     selectedCameraId.value = availableCameras.value[nextIndex].deviceId
 
     try {
-        // Stop recording jika sedang recording
         if (isRecording.value) {
             alert('Please stop recording before switching camera')
             return
@@ -281,7 +393,6 @@ const join = async () => {
 }
 
 const endCall = () => {
-    // Stop recording jika masih aktif
     if (isRecording.value) {
         stopRecording()
     }
@@ -337,12 +448,11 @@ const startRecording = async () => {
 
         const stream = new MediaStream([videoMediaStreamTrack, audioMediaStreamTrack])
 
-        // Cek codec support dengan priority order
         let options: MediaRecorderOptions
         if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
             options = { 
                 mimeType: 'video/webm;codecs=vp9,opus',
-                videoBitsPerSecond: 2500000 // 2.5 Mbps
+                videoBitsPerSecond: 2500000
             }
         } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
             options = { 
@@ -381,8 +491,7 @@ const startRecording = async () => {
             stopRecordingTimer()
         }
 
-        // Start dengan timeslice lebih kecil untuk smooth recording
-        mediaRecorder.value.start(100) // 100ms chunks
+        mediaRecorder.value.start(100)
         isRecording.value = true
         recordingStartTime.value = Date.now()
         
@@ -446,7 +555,9 @@ const saveRecording = () => {
     alert('Recording saved successfully!')
 }
 
-// Stats monitoring functions
+// =====================================================
+// Stats monitoring functions (using client-level SDK stats)
+// =====================================================
 const toggleStatsModal = () => {
     showStats.value = !showStats.value
 }
@@ -455,8 +566,7 @@ const startStatsMonitoring = () => {
     if (statsInterval.value) return
     
     statsInterval.value = setInterval(() => {
-        updateLocalStats()
-        updateRemoteStats()
+        flushStats()
         saveStatsToHistory()
     }, 1000)
 }
@@ -468,39 +578,76 @@ const stopStatsMonitoring = () => {
     }
 }
 
-const updateLocalStats = () => {
-    if (!localVideoTrack.value || !localAudioTrack.value) return
-    
-    const videoStats = localVideoTrack.value.getStats()
-    localStats.value.resolution = `${videoStats.sendResolutionWidth}x${videoStats.sendResolutionHeight}`
-    localStats.value.fps = videoStats.sendFrameRate || 0
-    localStats.value.sendVideoBitrate = Math.round(videoStats.sendBitrate || 0)
-    
-    const audioStats = localAudioTrack.value.getStats()
-    localStats.value.sendAudioBitrate = Math.round(audioStats.sendBitrate || 0)
-}
+const flushStats = () => {
+    if (!client.value) return
 
-const updateRemoteStats = () => {
-    const remoteUsers = client.value.remoteUsers
-    if (remoteUsers.length === 0) {
+    // ---- Client Stats (client.getRTCStats()) ----
+    const rtcStats = client.value.getRTCStats()
+    clientStats.value.userCount = rtcStats.UserCount ?? 0
+    clientStats.value.duration = rtcStats.Duration ?? 0
+    clientStats.value.recvBitrate = rtcStats.RecvBitrate ?? 0
+    clientStats.value.sendBitrate = rtcStats.SendBitrate ?? 0
+    clientStats.value.recvBytes = rtcStats.RecvBytes ?? 0
+    clientStats.value.sendBytes = rtcStats.SendBytes ?? 0
+    clientStats.value.outgoingAvailableBandwidth = Number(rtcStats.OutgoingAvailableBandwidth ?? 0).toFixed(3)
+    clientStats.value.rtt = rtcStats.RTT ?? 0
+
+    // ---- Local Stats (client.getLocalVideoStats() & client.getLocalAudioStats()) ----
+    const localVideoStat = client.value.getLocalVideoStats()
+    const localAudioStat = client.value.getLocalAudioStats()
+
+    localStats.value.audioSendBitrate = localAudioStat.sendBitrate ?? 0
+    localStats.value.audioSendBytes = localAudioStat.sendBytes ?? 0
+    localStats.value.audioSendPackets = localAudioStat.sendPackets ?? 0
+    localStats.value.audioSendPacketsLost = localAudioStat.sendPacketsLost ?? 0
+
+    localStats.value.captureResolutionHeight = localVideoStat.captureResolutionHeight ?? 0
+    localStats.value.captureResolutionWidth = localVideoStat.captureResolutionWidth ?? 0
+    localStats.value.sendResolutionHeight = localVideoStat.sendResolutionHeight ?? 0
+    localStats.value.sendResolutionWidth = localVideoStat.sendResolutionWidth ?? 0
+    localStats.value.encodeDelay = Number(localVideoStat.encodeDelay ?? 0).toFixed(2)
+    localStats.value.videoSendBitrate = localVideoStat.sendBitrate ?? 0
+    localStats.value.videoSendBytes = localVideoStat.sendBytes ?? 0
+    localStats.value.videoSendPackets = localVideoStat.sendPackets ?? 0
+    localStats.value.videoSendPacketsLost = localVideoStat.sendPacketsLost ?? 0
+    localStats.value.videoDuration = localVideoStat.totalDuration ?? 0
+    localStats.value.videoFreezeTime = localVideoStat.totalFreezeTime ?? 0
+
+    // ---- Remote Stats (client.getRemoteVideoStats() & client.getRemoteAudioStats()) ----
+    const remoteVideoStatsMap = client.value.getRemoteVideoStats()
+    const remoteAudioStatsMap = client.value.getRemoteAudioStats()
+
+    const remoteUids = Object.keys(remoteVideoStatsMap)
+    if (remoteUids.length > 0) {
+        const uid = remoteUids[0]
+        remoteStats.value.uid = uid
+
+        const rvs = remoteVideoStatsMap[uid]
+        const ras = remoteAudioStatsMap[uid]
+
+        if (ras) {
+            remoteStats.value.audioReceiveDelay = Number(ras.receiveDelay ?? 0).toFixed(2)
+            remoteStats.value.audioReceiveBytes = ras.receiveBytes ?? 0
+            remoteStats.value.audioReceivePackets = ras.receivePackets ?? 0
+            remoteStats.value.audioReceivePacketsLost = ras.receivePacketsLost ?? 0
+            remoteStats.value.audioPacketLossRate = Number(ras.packetLossRate ?? 0).toFixed(3)
+        }
+
+        if (rvs) {
+            remoteStats.value.videoReceiveDelay = Number(rvs.receiveDelay ?? 0).toFixed(2)
+            remoteStats.value.receiveResolutionHeight = rvs.receiveResolutionHeight ?? 0
+            remoteStats.value.receiveResolutionWidth = rvs.receiveResolutionWidth ?? 0
+            remoteStats.value.videoReceiveBitrate = rvs.receiveBitrate ?? 0
+            remoteStats.value.videoReceiveBytes = rvs.receiveBytes ?? 0
+            remoteStats.value.videoReceivePackets = rvs.receivePackets ?? 0
+            remoteStats.value.videoReceivePacketsLost = rvs.receivePacketsLost ?? 0
+            remoteStats.value.videoPacketLossRate = Number(rvs.receivePacketsLost ?? 0).toFixed(3)
+            remoteStats.value.videoDuration = rvs.totalDuration ?? 0
+            remoteStats.value.videoFreezeTime = rvs.totalFreezeTime ?? 0
+            remoteStats.value.videoFreezeRate = Number(rvs.freezeRate ?? 0).toFixed(3)
+        }
+    } else {
         remoteStats.value.uid = null
-        return
-    }
-    
-    const remoteUser = remoteUsers[0]
-    remoteStats.value.uid = remoteUser.uid
-    
-    if (remoteUser.videoTrack) {
-        const videoStats = remoteUser.videoTrack.getStats()
-        remoteStats.value.resolution = `${videoStats.receiveResolutionWidth}x${videoStats.receiveResolutionHeight}`
-        remoteStats.value.fps = videoStats.receiveFrameRate || 0
-        remoteStats.value.recvVideoBitrate = Math.round(videoStats.receiveBitrate || 0)
-        remoteStats.value.delay = videoStats.receiveDelay || 0
-    }
-    
-    if (remoteUser.audioTrack) {
-        const audioStats = remoteUser.audioTrack.getStats()
-        remoteStats.value.recvAudioBitrate = Math.round(audioStats.receiveBitrate || 0)
     }
 }
 
@@ -510,15 +657,50 @@ const saveStatsToHistory = () => {
     
     statsHistory.value.push({
         timestamp,
-        localResolution: localStats.value.resolution,
-        localFps: localStats.value.fps,
-        localSendAudioBitrate: localStats.value.sendAudioBitrate,
-        localSendVideoBitrate: localStats.value.sendVideoBitrate,
-        remoteDelay: remoteStats.value.delay,
-        remoteResolution: remoteStats.value.resolution,
-        remoteFps: remoteStats.value.fps,
-        remoteRecvAudioBitrate: remoteStats.value.recvAudioBitrate,
-        remoteRecvVideoBitrate: remoteStats.value.recvVideoBitrate
+        // Client stats
+        userCount: clientStats.value.userCount,
+        duration: clientStats.value.duration,
+        sendBitrate: clientStats.value.sendBitrate,
+        recvBitrate: clientStats.value.recvBitrate,
+        sendBytes: clientStats.value.sendBytes,
+        recvBytes: clientStats.value.recvBytes,
+        outgoingAvailableBandwidth: clientStats.value.outgoingAvailableBandwidth,
+        rtt: clientStats.value.rtt,
+        // Local audio
+        audioSendBitrate: localStats.value.audioSendBitrate,
+        audioSendBytes: localStats.value.audioSendBytes,
+        audioSendPackets: localStats.value.audioSendPackets,
+        audioSendPacketsLost: localStats.value.audioSendPacketsLost,
+        // Local video
+        captureResolutionHeight: localStats.value.captureResolutionHeight,
+        captureResolutionWidth: localStats.value.captureResolutionWidth,
+        sendResolutionHeight: localStats.value.sendResolutionHeight,
+        sendResolutionWidth: localStats.value.sendResolutionWidth,
+        encodeDelay: localStats.value.encodeDelay,
+        videoSendBitrate: localStats.value.videoSendBitrate,
+        videoSendBytes: localStats.value.videoSendBytes,
+        videoSendPackets: localStats.value.videoSendPackets,
+        videoSendPacketsLost: localStats.value.videoSendPacketsLost,
+        videoDuration: localStats.value.videoDuration,
+        videoFreezeTime: localStats.value.videoFreezeTime,
+        // Remote audio
+        audioReceiveDelay: remoteStats.value.audioReceiveDelay,
+        audioReceiveBytes: remoteStats.value.audioReceiveBytes,
+        audioReceivePackets: remoteStats.value.audioReceivePackets,
+        audioReceivePacketsLost: remoteStats.value.audioReceivePacketsLost,
+        audioPacketLossRate: remoteStats.value.audioPacketLossRate,
+        // Remote video
+        videoReceiveDelay: remoteStats.value.videoReceiveDelay,
+        receiveResolutionHeight: remoteStats.value.receiveResolutionHeight,
+        receiveResolutionWidth: remoteStats.value.receiveResolutionWidth,
+        videoReceiveBitrate: remoteStats.value.videoReceiveBitrate,
+        videoReceiveBytes: remoteStats.value.videoReceiveBytes,
+        videoReceivePackets: remoteStats.value.videoReceivePackets,
+        videoReceivePacketsLost: remoteStats.value.videoReceivePacketsLost,
+        videoPacketLossRate: remoteStats.value.videoPacketLossRate,
+        remoteVideoDuration: remoteStats.value.videoDuration,
+        remoteVideoFreezeTime: remoteStats.value.videoFreezeTime,
+        videoFreezeRate: remoteStats.value.videoFreezeRate
     })
 }
 
@@ -530,28 +712,93 @@ const exportStatsToCSV = () => {
     
     const headers = [
         'Timestamp',
-        'Local Resolution',
-        'Local FPS',
-        'Local Send Audio Bitrate (kbps)',
-        'Local Send Video Bitrate (kbps)',
-        'Remote Delay (ms)',
-        'Remote Resolution',
-        'Remote FPS',
-        'Remote Recv Audio Bitrate (kbps)',
-        'Remote Recv Video Bitrate (kbps)'
+        // Client stats
+        'Users in Channel',
+        'Duration (s)',
+        'Send Bitrate (bps)',
+        'Recv Bitrate (bps)',
+        'Send Bytes',
+        'Recv Bytes',
+        'Outgoing Available Bandwidth (kbps)',
+        'RTT (ms)',
+        // Local audio
+        'Local Audio Send Bitrate (bps)',
+        'Local Audio Send Bytes',
+        'Local Audio Send Packets',
+        'Local Audio Packets Lost',
+        // Local video
+        'Local Capture Resolution Height',
+        'Local Capture Resolution Width',
+        'Local Send Resolution Height',
+        'Local Send Resolution Width',
+        'Local Encode Delay (ms)',
+        'Local Video Send Bitrate (bps)',
+        'Local Video Send Bytes',
+        'Local Video Send Packets',
+        'Local Video Packets Lost',
+        'Local Video Duration (s)',
+        'Local Video Freeze Time (s)',
+        // Remote audio
+        'Remote Audio Receive Delay (ms)',
+        'Remote Audio Receive Bytes',
+        'Remote Audio Receive Packets',
+        'Remote Audio Packets Lost',
+        'Remote Audio Packet Loss Rate (%)',
+        // Remote video
+        'Remote Video Receive Delay (ms)',
+        'Remote Video Receive Resolution Height',
+        'Remote Video Receive Resolution Width',
+        'Remote Video Receive Bitrate (bps)',
+        'Remote Video Receive Bytes',
+        'Remote Video Receive Packets',
+        'Remote Video Packets Lost',
+        'Remote Video Packet Loss Rate (%)',
+        'Remote Video Duration (s)',
+        'Remote Video Freeze Time (s)',
+        'Remote Video Freeze Rate (%)'
     ]
     
     const rows = statsHistory.value.map(stat => [
         stat.timestamp,
-        stat.localResolution,
-        stat.localFps,
-        stat.localSendAudioBitrate,
-        stat.localSendVideoBitrate,
-        stat.remoteDelay,
-        stat.remoteResolution,
-        stat.remoteFps,
-        stat.remoteRecvAudioBitrate,
-        stat.remoteRecvVideoBitrate
+        stat.userCount,
+        stat.duration,
+        stat.sendBitrate,
+        stat.recvBitrate,
+        stat.sendBytes,
+        stat.recvBytes,
+        stat.outgoingAvailableBandwidth,
+        stat.rtt,
+        stat.audioSendBitrate,
+        stat.audioSendBytes,
+        stat.audioSendPackets,
+        stat.audioSendPacketsLost,
+        stat.captureResolutionHeight,
+        stat.captureResolutionWidth,
+        stat.sendResolutionHeight,
+        stat.sendResolutionWidth,
+        stat.encodeDelay,
+        stat.videoSendBitrate,
+        stat.videoSendBytes,
+        stat.videoSendPackets,
+        stat.videoSendPacketsLost,
+        stat.videoDuration,
+        stat.videoFreezeTime,
+        stat.audioReceiveDelay,
+        stat.audioReceiveBytes,
+        stat.audioReceivePackets,
+        stat.audioReceivePacketsLost,
+        stat.audioPacketLossRate,
+        stat.videoReceiveDelay,
+        stat.receiveResolutionHeight,
+        stat.receiveResolutionWidth,
+        stat.videoReceiveBitrate,
+        stat.videoReceiveBytes,
+        stat.videoReceivePackets,
+        stat.videoReceivePacketsLost,
+        stat.videoPacketLossRate,
+        stat.remoteVideoDuration,
+        stat.remoteVideoFreezeTime,
+        stat.videoFreezeRate
     ])
     
     const csvContent = [
@@ -564,7 +811,7 @@ const exportStatsToCSV = () => {
     const url = URL.createObjectURL(blob)
     
     link.setAttribute('href', url)
-    link.setAttribute('download', `stats_${roomID.value}_${Date.now()}.csv`)
+    link.setAttribute('download', `stats_host_${roomID.value}_${Date.now()}.csv`)
     link.style.visibility = 'hidden'
     
     document.body.appendChild(link)
